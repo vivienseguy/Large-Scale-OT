@@ -2,6 +2,7 @@ import numpy as np
 from keras import optimizers
 from keras import backend as K
 from keras.models import Input, Model, Sequential
+from keras.layers import Dense
 import tensorflow as tf
 import os
 import time
@@ -225,7 +226,7 @@ def getConfig(visible_device_list, log_device_placement = False):
 
 def get_sample_mapping(d):
     u = Sequential(name='barycentric_mapping')
-    u.add(Sequential.Dense(512, input_dim=d, activation='relu'))
-    u.add(Sequential.Dense(512, input_dim=d, activation='relu'))
-    u.add(Sequential.Dense(d, activation='linear', use_bias=False, name='output_layer'))
+    u.add(Dense(512, input_dim=d, activation='relu'))
+    u.add(Dense(512, input_dim=d, activation='relu'))
+    u.add(Dense(d, activation='linear', use_bias=False, name='output_layer'))
     return u

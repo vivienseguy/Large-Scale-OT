@@ -1,7 +1,7 @@
-#%% 2-dimensional test script
+#%% 2-dimensional test script for the computation of regularized OT between a Gaussian and a discrete data set (semi-discrete OT)
 import matplotlib.pylab as pl
 import numpy as np
-from keras.models import Input, Model, Sequential
+from keras.models import Sequential
 from keras.layers import Dense
 import SGD_OT_SD
 
@@ -14,6 +14,7 @@ def get_sample_network(d, name=None):
     return u
 
 
+# Initialize target discrete data set
 d=2
 nt=200
 scale = 2.5
@@ -21,26 +22,19 @@ xt = np.concatenate((np.random.choice(np.array([-scale, scale]), nt).reshape((-1
 xt = xt+0.2*np.random.randn(nt,2)
 
 
-# Dual OT Stochastic Optimization
+# Dual OT Stochastic Optimization (the number of epochs is computed as (nt*nt)/(batch_size*batch_size))
 myTransporterDual = SGD_OT_SD.StochasticSemiDiscreteTransport(reg_type='entropy', reg_val=1.,  model_potential_fun=get_sample_network, xt=xt, wt=np.ones((nt,))/nt)
-h, _= myTransporterDual.fit_from_gaussian(lr=0.1, epochs=10000, batch_size=100, mean=0., std=0.5, processor_type='cpu')
+h = myTransporterDual.fit_from_gaussian(lr=0.1, epochs=2000, batch_size=50, mean=0., std=0.5, processor_type='cpu')
 
-sav_results={}
-res={}
-
-res['dual']={}
-res['dual']['loss']=h['losses']
-res['dual']['time']=h['time']
-res['dual']['epochs']=10
 
 pl.figure(1)
 pl.plot(h['losses'],lw=3,label='loss')
-pl.title('Learning')
+pl.title('OT_dual')
 pl.savefig('OT_dual_loss.png')
 
 
 # Stochastic Barycentric Mapping Learning
-h = myTransporterDual.fit_barycentric_mapping_from_gaussian(lr=0.000001, epochs=2000, batch_size=100, mean=0., std=0.5, processor_type='cpu')
+h = myTransporterDual.fit_barycentric_mapping_from_gaussian(lr=0.0000005, epochs=1500, batch_size=50, mean=0., std=0.5, processor_type='cpu')
 
 pl.figure(2)
 pl.plot(h['losses'],lw=3,label='loss')
