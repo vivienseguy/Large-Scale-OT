@@ -23,7 +23,7 @@ xt = xt+0.2*np.random.randn(nt,2)
 
 
 # Dual OT Stochastic Optimization (the number of epochs is computed as (nt*nt)/(batch_size*batch_size))
-myTransporterDual = SGD_OT_SD.StochasticSemiDiscreteTransport(reg_type='entropy', reg_val=1.,  model_potential_fun=get_sample_network, xt=xt, wt=np.ones((nt,))/nt)
+myTransporterDual = SGD_OT_SD.StochasticSemiDiscreteTransport(reg_type='entropy', reg_val=1., model_potential_fun=get_sample_network, xt=xt, wt=np.ones((nt,)) / nt)
 h = myTransporterDual.fit_from_gaussian(lr=0.1, epochs=2000, batch_size=50, mean=0., std=0.5, processor_type='cpu')
 
 
