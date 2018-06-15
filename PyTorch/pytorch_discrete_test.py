@@ -1,60 +1,59 @@
 import numpy as np
 import matplotlib.pylab as pl
-import ot
 from StochasticOTDiscrete import PyTorchStochasticDiscreteTransport
 
-n = 100
-d = 2
-ns = 60
-nt = 60
-reg_val = 0.1
 
-nz = 2.
+# Initialize data
+d = 2
+ns = 300
+nt = 300
+reg_val = 0.02
+reg_type = 'l2'
+
+radius = 1.
+noise_a = 0.1
 t = np.random.rand(ns)*2*np.pi
 xs = np.concatenate((np.cos(t).reshape((-1,1)), np.sin(t).reshape((-1,1))),1)
+xs = radius*xs + noise_a*np.random.randn(ns,2)
 ws = np.ones((ns,))/ns
 
-t = np.random.rand()*2*np.pi
+radius = 2.
+noise_a = 0.2
+t = np.random.rand(nt)*2*np.pi
 xt = np.concatenate((np.cos(t).reshape((-1,1)),np.sin(t).reshape((-1,1))),1)
-xt = xt*2. + nz*np.random.randn(nt,2)
+xt = radius*xt + noise_a*np.random.randn(nt,2)
 wt = np.ones((nt,))/nt
 
-# pl.figure(1)
-# pl.clf()
-# pl.subplot(1,2,1)
-# pl.hist2d(xs[:,0],xs[:,1],bins=n,range=[[-3,3],[-3,3]],cmap='Blues')
-# pl.title('Source')
-# pl.subplot(1,2,2)
-# pl.hist2d(xt[:,0],-xt[:,1],bins=n,range=[[-3,3],[-3,3]],cmap='Blues')
-# pl.title('Target')
-# pl.savefig('OT_dual_circle_new.png')
 
+# Dual OT Stochastic Optimization (alg.1 of ICLR 2018 paper "Large-Scale Optimal Transport and Mapping Estimation")
+discreteOTComputer = PyTorchStochasticDiscreteTransport(xs, ws, xt, wt, reg_type, reg_val)
+history = discreteOTComputer.learn_OT_dual_variables(epochs=1000, batch_size=50, lr=0.001)
 
-# Sinkhorn divergence (POT) rescaled entropy reg
-M = ot.dist(xs, xt)+reg_val*np.log(ns*nt)
-w_sinkhorn, log = ot.bregman.sinkhorn2(np.ones((ns,1))/ns, np.ones((nt,1))/nt, M, reg=reg_val, numItermax=10000, stopThr=1e-12, log=True)
-plan_sinkhorn = np.reshape(log['u'], (-1,1))*np.exp(-M/reg_val)*np.reshape(log['v'], (1,-1))
-u_sinkhorn = np.log(log['u'])*reg_val
-v_sinkhorn = np.log(log['v'])*reg_val
-u_sinkhorn_2 = (-np.log(log['u'])-0.5)*reg_val
-v_sinkhorn_2 = (-np.log(log['v'])-0.5)*reg_val
-d_sinkhorn = np.sum(u_sinkhorn)/ns + np.sum(v_sinkhorn)/nt - reg_val*np.sum(np.exp((u_sinkhorn + v_sinkhorn.T - M)/reg_val))
+# Compute the reg-OT objective
+d_stochastic = discreteOTComputer.compute_OT_MonteCarlo(epochs=20, batch_size=50)
+print('dual objective: %f\n' % d_stochastic)
 
-
-# Dual OT Stochastic Optimization
-discreteOTComputer = PyTorchStochasticDiscreteTransport(xs, ws, xt, wt, 'entropy', reg_val)
-history = discreteOTComputer.learn_OT_dual_variables(epochs=500, batch_size=5, lr=0.001)
-d_stochastic = discreteOTComputer.compute_OT_MonteCarlo(epochs=20, batch_size=20)
-
-
-pl.figure(2)
+pl.figure(1)
 pl.plot(history['losses'], lw=3, label='loss')
 pl.legend(loc='best')
 pl.title('Loss per epoch')
 pl.savefig('loss_per_epoch.png')
 
 
-print('\n')
-print('sinkhorn: %f' % d_sinkhorn)
-print('stochastic dual: %f\n' % d_stochastic)
+# Learn Barycentric Mapping (alg.2 of ICLR 2018 paper "Large-Scale Optimal Transport and Mapping Estimation")
+bp_history = discreteOTComputer.learn_barycentric_mapping(epochs=100, batch_size=50, lr=0.00001)
 
+pl.figure(2)
+pl.plot(bp_history['losses'], lw=3, label='loss')
+pl.title('Loss per epochs')
+pl.savefig('barycentric_map_learning_loss.png')
+
+# Compute Mapping estimation
+idv = np.random.permutation(nt)
+xsf = discreteOTComputer.evaluate_barycentric_mapping(xs)
+
+pl.figure(3)
+pl.plot(xs[:, 0], xs[:, 1], '+b')
+pl.plot(xt[:, 0], xt[:, 1], 'xr')
+pl.plot(xsf[:, 0], xsf[:, 1], '+g')
+pl.savefig('mapping_estimation.png')
