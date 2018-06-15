@@ -135,7 +135,7 @@ class PyTorchStochasticDiscreteTransport:
     def learn_barycentric_mapping(self, neuralNet=None, epochs=10, batch_size=100, optimizer=None, lr=0.01, processor_type='cpu', processor_index="1"):
 
         if not neuralNet:
-            neuralNet = Net()
+            neuralNet = Net(self.d)
 
         self.barycentric_mapping = neuralNet
 
