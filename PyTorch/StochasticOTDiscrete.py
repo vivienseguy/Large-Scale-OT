@@ -55,7 +55,32 @@ class PyTorchStochasticDiscreteTransport:
         return -loss_batch
 
 
-    def learn_OT_dual_variables(self, epochs=10, batch_size=100, optimizer=None, lr=0.01, processor_type='cpu', processor_index="1"):
+    def moveDataToGPU(self, device_index=0):
+
+        cuda = torch.device('cuda:%d' % (device_index,))
+        self.Xs = self.Xs.to(device=cuda)
+        self.Xt = self.Xt.to(device=cuda)
+        self.u = self.u.to(device=cuda)
+        self.v = self.v.to(device=cuda)
+
+
+    def sampleFromIndependantCoupling(self, batch_size, device_type='cpu', device_index=0):
+
+        i_s = torch.from_numpy(np.random.choice(self.ns, size=(batch_size,), replace=False, p=self.ws)).type(torch.LongTensor)
+        i_t = torch.from_numpy(np.random.choice(self.nt, size=(batch_size,), replace=False, p=self.wt)).type(torch.LongTensor)
+
+        if device_type == 'gpu':
+            cuda = torch.device('cuda:%d' % (device_index,))
+            i_s = i_s.to(device=cuda)
+            i_t = i_t.to(device=cuda)
+
+        return i_s, i_t
+
+
+    def learn_OT_dual_variables(self, epochs=10, batch_size=100, optimizer=None, lr=0.01, device_type='cpu', device_index=0):
+
+        if device_type == 'gpu':
+            self.moveDataToGPU(device_index=device_index)
 
         if not optimizer:
             optimizer = torch.optim.SGD([self.u, self.v], lr=lr)
@@ -74,11 +99,9 @@ class PyTorchStochasticDiscreteTransport:
 
             for b in range(batch_number_per_epoch):
 
-                i_s = torch.from_numpy(np.random.choice(self.ns, size=(batch_size,), replace=False, p=self.ws)).type(torch.LongTensor)
-                i_t = torch.from_numpy(np.random.choice(self.nt, size=(batch_size,), replace=False, p=self.wt)).type(torch.LongTensor)
+                i_s, i_t = self.sampleFromIndependantCoupling(batch_size, device_type, device_index)
 
                 optimizer.zero_grad()
-
                 loss_batch = self.dual_OT_model(i_s, i_t)
                 loss_batch.backward()
                 optimizer.step()
@@ -96,18 +119,17 @@ class PyTorchStochasticDiscreteTransport:
         return history
 
 
-    def compute_OT_MonteCarlo(self, epochs=10, batch_size=100): # before calling this, find the optimum dual variables with learn_OT_dual_variables
+    def compute_OT_MonteCarlo(self, epochs=10, batch_size=100, device_type='cpu', device_index=0): # before calling this, find the optimum dual variables with learn_OT_dual_variables
         batch_number_per_epoch = max([int((self.nt*self.nt)/float(batch_size*batch_size)), 1])
         OT_value = 0.
         for e in range(epochs):
             for b in range(batch_number_per_epoch):
-                i_s = torch.from_numpy(np.random.choice(self.ns, size=(batch_size,), replace=False, p=self.ws)).type(torch.LongTensor)
-                i_t = torch.from_numpy(np.random.choice(self.nt, size=(batch_size,), replace=False, p=self.wt)).type(torch.LongTensor)
+                i_s, i_t = self.sampleFromIndependantCoupling(batch_size, device_type, device_index)
                 OT_value += self.dual_OT_model(i_s, i_t).item()
         return -OT_value/epochs/(self.nt*self.nt)
 
 
-    def barycentric_mapping_model(self, neuralNet, i_s, i_t):
+    def barycentric_mapping_loss_model(self, neuralNet, i_s, i_t):
 
         self.u.requires_grad_(False)
         self.v.requires_grad_(False)
@@ -161,7 +183,7 @@ class PyTorchStochasticDiscreteTransport:
 
                 optimizer.zero_grad()
 
-                loss_batch = self.barycentric_mapping_model(neuralNet, i_s, i_t)
+                loss_batch = self.barycentric_mapping_loss_model(neuralNet, i_s, i_t)
                 loss_batch.backward()
                 optimizer.step()
 
