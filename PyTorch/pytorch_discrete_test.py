@@ -9,6 +9,8 @@ ns = 300
 nt = 300
 reg_val = 0.02
 reg_type = 'l2'
+device_type = 'gpu'
+device_index = 0
 
 radius = 1.
 noise_a = 0.1
@@ -27,7 +29,7 @@ wt = np.ones((nt,))/nt
 
 # Dual OT Stochastic Optimization (alg.1 of ICLR 2018 paper "Large-Scale Optimal Transport and Mapping Estimation")
 discreteOTComputer = PyTorchStochasticDiscreteTransport(xs, ws, xt, wt, reg_type, reg_val)
-history = discreteOTComputer.learn_OT_dual_variables(epochs=1000, batch_size=50, lr=0.001)
+history = discreteOTComputer.learn_OT_dual_variables(epochs=1000, batch_size=50, lr=0.001, device_type=device_type, device_index=device_index)
 
 # Compute the reg-OT objective
 d_stochastic = discreteOTComputer.compute_OT_MonteCarlo(epochs=20, batch_size=50)
