@@ -1,6 +1,6 @@
 import numpy as np
 import matplotlib.pylab as pl
-from StochasticOTDiscrete import PyTorchStochasticDiscreteTransport
+from PyTorch.StochasticOTClasses.StochasticOTDiscrete import PyTorchStochasticDiscreteOT
 
 
 # Initialize data
@@ -9,7 +9,7 @@ ns = 300
 nt = 300
 reg_val = 0.02
 reg_type = 'l2'
-device_type = 'gpu'
+device_type = 'cpu'
 device_index = 0
 
 radius = 1.
@@ -28,8 +28,8 @@ wt = np.ones((nt,))/nt
 
 
 # Dual OT Stochastic Optimization (alg.1 of ICLR 2018 paper "Large-Scale Optimal Transport and Mapping Estimation")
-discreteOTComputer = PyTorchStochasticDiscreteTransport(xs, ws, xt, wt, reg_type, reg_val)
-history = discreteOTComputer.learn_OT_dual_variables(epochs=1000, batch_size=50, lr=0.001, device_type=device_type, device_index=device_index)
+discreteOTComputer = PyTorchStochasticDiscreteOT(xs, ws, xt, wt, reg_type, reg_val)
+history = discreteOTComputer.learn_OT_dual_variables(epochs=1000, batch_size=50, lr=0.0005, device_type=device_type, device_index=device_index)
 
 # Compute the reg-OT objective
 d_stochastic = discreteOTComputer.compute_OT_MonteCarlo(epochs=20, batch_size=50)
@@ -43,7 +43,7 @@ pl.savefig('loss_per_epoch.png')
 
 
 # Learn Barycentric Mapping (alg.2 of ICLR 2018 paper "Large-Scale Optimal Transport and Mapping Estimation")
-bp_history = discreteOTComputer.learn_barycentric_mapping(epochs=100, batch_size=50, lr=0.00001)
+bp_history = discreteOTComputer.learn_barycentric_mapping(epochs=300, batch_size=50, lr=0.000002, device_type=device_type, device_index=device_index)
 
 pl.figure(2)
 pl.plot(bp_history['losses'], lw=3, label='loss')
@@ -51,7 +51,6 @@ pl.title('Loss per epochs')
 pl.savefig('barycentric_map_learning_loss.png')
 
 # Compute Mapping estimation
-idv = np.random.permutation(nt)
 xsf = discreteOTComputer.evaluate_barycentric_mapping(xs)
 
 pl.figure(3)

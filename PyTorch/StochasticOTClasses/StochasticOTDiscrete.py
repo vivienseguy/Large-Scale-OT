@@ -3,15 +3,15 @@ import time
 import torch
 import torch.nn as nn
 import torch.nn.functional as func
+from StochasticOT import PyTorchStochasticOT
 
 
-class PyTorchStochasticDiscreteTransport:
+class PyTorchStochasticDiscreteOT(PyTorchStochasticOT):
 
 
     def __init__(self, xs=None, ws=None, xt=None, wt=None, reg_type='entropy', reg_val=0.1):
 
-        self.reg_type = reg_type
-        self.reg_val = reg_val
+        PyTorchStochasticOT.__init__(self, reg_type=reg_type, reg_val=reg_val)
 
         self.Xs = torch.from_numpy(xs)
         self.ws = torch.from_numpy(ws)
@@ -23,15 +23,9 @@ class PyTorchStochasticDiscreteTransport:
         self.nt = xt.shape[0]
 
         self.d = xt.shape[1]
-        self.d_type = torch.float64
 
         self.u = torch.zeros(self.ns, dtype=self.d_type, requires_grad=True) # first dual variable
         self.v = torch.zeros(self.nt, dtype=self.d_type, requires_grad=True) # second dual variable
-
-
-    def computeSquareEuclideanCostMatrix(self, Xs_batch, Xt_batch):
-        return torch.reshape(torch.sum(torch.mul(Xs_batch, Xs_batch), dim=1), (-1, 1)) + torch.reshape(torch.sum(torch.mul(Xt_batch, Xt_batch), dim=1), (1, -1)) \
-               - 2. * torch.matmul(Xs_batch,torch.transpose(Xt_batch, 0,1))
 
 
     def dual_OT_model(self, i_s, i_t):
@@ -42,17 +36,7 @@ class PyTorchStochasticDiscreteTransport:
         Xs_batch = torch.index_select(self.Xs, dim=0, index=i_s)
         Xt_batch = torch.index_select(self.Xt, dim=0, index=i_t)
 
-        C_batch = self.computeSquareEuclideanCostMatrix(Xs_batch, Xt_batch)
-
-        if self.reg_type == 'entropy':
-            loss_batch = torch.sum(u_batch)*batch_size + torch.sum(v_batch)*batch_size \
-                         - self.reg_val*torch.sum(torch.exp((torch.reshape(u_batch, (-1, 1)) + torch.reshape(v_batch, (1, -1)) - C_batch) / self.reg_val))
-        elif self.reg_type == 'l2':
-            tmp = torch.max(torch.zeros(1).type(torch.DoubleTensor), (torch.reshape(u_batch, (-1, 1)) + torch.reshape(v_batch, (1, -1)) - C_batch))
-            loss_batch = torch.sum(u_batch)*batch_size + torch.sum(v_batch)*batch_size \
-                         - (1./(4.*self.reg_val))*torch.sum(torch.mul(tmp, tmp))
-
-        return -loss_batch
+        return self.dual_OT_batch_loss(batch_size=batch_size, u_batch=u_batch, v_batch=v_batch, Xs_batch=Xs_batch, Xt_batch=Xt_batch)
 
 
     def moveDataToGPU(self, device_index=0):
@@ -82,8 +66,9 @@ class PyTorchStochasticDiscreteTransport:
         if device_type == 'gpu':
             self.moveDataToGPU(device_index=device_index)
 
+        trainable_params = [self.u, self.v]
         if not optimizer:
-            optimizer = torch.optim.SGD([self.u, self.v], lr=lr)
+            optimizer = torch.optim.SGD(trainable_params, lr=lr)
 
         batch_number_per_epoch = max([int((self.nt*self.nt)/float(batch_size*batch_size)), 1])
 
@@ -139,25 +124,15 @@ class PyTorchStochasticDiscreteTransport:
         Xs_batch = torch.index_select(self.Xs, dim=0, index=i_s)
         Xt_batch = torch.index_select(self.Xt, dim=0, index=i_t)
 
-        C_batch = self.computeSquareEuclideanCostMatrix(Xs_batch, Xt_batch)
+        fXs_batch = neuralNet(Xs_batch)
 
-        if self.reg_type == 'entropy':
-            H = torch.exp((torch.reshape(u_batch, (-1, 1)) + torch.reshape(v_batch, (1, -1)) - C_batch) / self.reg_val)
-        elif self.reg_type == 'l2':
-            H = (1./(2.*self.reg_val))*torch.max(torch.zeros(1).type(torch.DoubleTensor), (torch.reshape(u_batch, (-1, 1)) + torch.reshape(v_batch, (1, -1)) - C_batch))
-
-        fXs = neuralNet(Xs_batch)
-        d_batch = self.computeSquareEuclideanCostMatrix(fXs, Xt_batch)
-
-        loss_barycentric = torch.sum(torch.mul(d_batch, H))
-
-        return loss_barycentric
+        return self.barycentric_model_batch_loss(u_batch, v_batch, Xs_batch, Xt_batch, fXs_batch)
 
 
-    def learn_barycentric_mapping(self, neuralNet=None, epochs=10, batch_size=100, optimizer=None, lr=0.01, processor_type='cpu', processor_index="1"):
+    def learn_barycentric_mapping(self, neuralNet=None, epochs=10, batch_size=100, optimizer=None, lr=0.01, device_type='cpu', device_index=0):
 
         if not neuralNet:
-            neuralNet = Net(self.d)
+            neuralNet = Net(input_d=self.d, output_d=self.d)
 
         self.barycentric_mapping = neuralNet
 
@@ -166,8 +141,8 @@ class PyTorchStochasticDiscreteTransport:
 
         batch_number_per_epoch = max([int((self.nt*self.nt)/float(batch_size*batch_size)), 1])
 
-        self.barycentric_mapping_losses = []
-        self.barycentric_mapping_time = []
+        barycentric_mapping_losses = []
+        barycentric_mapping_time = []
         history = {}
 
         tic = time.time()
@@ -191,29 +166,23 @@ class PyTorchStochasticDiscreteTransport:
 
             print('Epoch : {}, barycentric_mapping loss = {}'.format(e+1, np.sum(batch_losses)))
 
-            self.barycentric_mapping_losses.append(np.sum(batch_losses)/(self.ns*self.nt))
-            self.barycentric_mapping_time.append(time.time()-tic)
+            barycentric_mapping_losses.append(np.sum(batch_losses)/(self.ns*self.nt))
+            barycentric_mapping_time.append(time.time()-tic)
 
-        history['losses'] = self.barycentric_mapping_losses
-        history['time'] = self.barycentric_mapping_time
+        history['losses'] = barycentric_mapping_losses
+        history['time'] = barycentric_mapping_time
 
         return history
 
 
-    def evaluate_barycentric_mapping(self, xs):
-        self.barycentric_mapping.eval()
-        xs_tensor = torch.from_numpy(xs)
-        return self.barycentric_mapping(xs_tensor).detach().numpy()
-
-
 
 class Net(nn.Module):
-    def __init__(self, d=2):
+    def __init__(self, input_d=2, output_d=2):
         super(Net, self).__init__()
-        self.fc1 = nn.Linear(d, 128)
+        self.fc1 = nn.Linear(input_d, 128)
         self.fc2 = nn.Linear(128, 256)
         self.fc3 = nn.Linear(256, 128)
-        self.fc4 = nn.Linear(128, d)
+        self.fc4 = nn.Linear(128, output_d)
 
     def forward(self, x):
         x = x.type(torch.FloatTensor)

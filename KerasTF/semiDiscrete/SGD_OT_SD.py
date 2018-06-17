@@ -25,7 +25,7 @@ class StochasticSemiDiscreteTransport:
         self.d_input = xt.shape[1]
         self.features_size = self.d_input
 
-        # In case we want to learn OT between the data and a Gaussian which is fitted to the data
+        # In case we want to learn OT between the data and a Gaussian which is fitted to the data by Maximum Likelihood
         self.xt_mean = np.mean(xt, axis=0)
         self.gaussian_mean = self.xt_mean
         (U,S,V) = np.linalg.svd(np.cov(np.transpose(xt)))
