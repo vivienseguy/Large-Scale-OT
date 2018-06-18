@@ -6,7 +6,7 @@ from PyTorch.StochasticOTClasses.StochasticOTSemiDiscrete import PyTorchStochast
 
 
 reg_type = 'l2'
-reg_val = 0.05
+reg_val = 0.005
 device_type = 'cpu'
 device_index = 0
 
@@ -25,9 +25,10 @@ xt = np.concatenate((np.random.choice(np.array([-scale, scale]), nt).reshape((-1
 xt = xt+0.2*np.random.randn(nt,2)
 wt = np.ones((nt,))/nt
 
+
 # Dual OT Stochastic Optimization (alg.1 of ICLR 2018 paper "Large-Scale Optimal Transport and Mapping Estimation")
-semiDiscreteOTComputer = PyTorchStochasticSemiDiscreteOT(xt, wt, source_dual_variable_NN=None, reg_type=reg_type, reg_val=reg_val)
-history = semiDiscreteOTComputer.learn_OT_dual_variables(epochs=1000, batch_size=50, source_sampling_function=gaussianSamplingFunction, lr=0.0001, device_type=device_type, device_index=device_index)
+semiDiscreteOTComputer = PyTorchStochasticSemiDiscreteOT(xt, wt, source_dual_variable_NN=None, reg_type=reg_type, reg_val=reg_val, device_type=device_type, device_index=device_index)
+history = semiDiscreteOTComputer.learn_OT_dual_variables(epochs=1000, batch_size=100, source_sampling_function=gaussianSamplingFunction, lr=0.0001)
 
 pl.figure(1)
 pl.plot(history['losses'], lw=3, label='loss')
@@ -37,7 +38,7 @@ pl.savefig('semi_discrete_loss_per_epoch.png')
 
 
 # Learn Barycentric Mapping (alg.2 of ICLR 2018 paper "Large-Scale Optimal Transport and Mapping Estimation")
-bp_history = semiDiscreteOTComputer.learn_barycentric_mapping(epochs=200, batch_size=50, source_sampling_function=gaussianSamplingFunction, lr=0.00001, device_type=device_type, device_index=device_index)
+bp_history = semiDiscreteOTComputer.learn_barycentric_mapping(epochs=1200, batch_size=100, source_sampling_function=gaussianSamplingFunction, lr=0.000001)
 
 pl.figure(2)
 pl.plot(bp_history['losses'], lw=3, label='loss')

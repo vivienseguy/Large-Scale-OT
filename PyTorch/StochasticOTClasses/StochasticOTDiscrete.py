@@ -9,9 +9,9 @@ from StochasticOT import PyTorchStochasticOT
 class PyTorchStochasticDiscreteOT(PyTorchStochasticOT):
 
 
-    def __init__(self, xs=None, ws=None, xt=None, wt=None, reg_type='entropy', reg_val=0.1):
+    def __init__(self, xs=None, ws=None, xt=None, wt=None, reg_type='entropy', reg_val=0.1, device_type='cpu', device_index=0):
 
-        PyTorchStochasticOT.__init__(self, reg_type=reg_type, reg_val=reg_val)
+        PyTorchStochasticOT.__init__(self, reg_type=reg_type, reg_val=reg_val, device_type=device_type, device_index=device_index)
 
         self.Xs = torch.from_numpy(xs)
         self.ws = torch.from_numpy(ws)
@@ -39,32 +39,29 @@ class PyTorchStochasticDiscreteOT(PyTorchStochasticOT):
         return self.dual_OT_batch_loss(batch_size=batch_size, u_batch=u_batch, v_batch=v_batch, Xs_batch=Xs_batch, Xt_batch=Xt_batch)
 
 
-    def moveDataToGPU(self, device_index=0):
+    def moveDataToGPU(self):
 
-        cuda = torch.device('cuda:%d' % (device_index,))
+        cuda = torch.device('cuda:%d' % (self.device_index,))
         self.Xs = self.Xs.to(device=cuda)
         self.Xt = self.Xt.to(device=cuda)
         self.u = self.u.to(device=cuda)
         self.v = self.v.to(device=cuda)
 
 
-    def sampleFromIndependantCoupling(self, batch_size, device_type='cpu', device_index=0):
+    def sampleFromIndependantCoupling(self, batch_size):
 
         i_s = torch.from_numpy(np.random.choice(self.ns, size=(batch_size,), replace=False, p=self.ws)).type(torch.LongTensor)
         i_t = torch.from_numpy(np.random.choice(self.nt, size=(batch_size,), replace=False, p=self.wt)).type(torch.LongTensor)
 
-        if device_type == 'gpu':
-            cuda = torch.device('cuda:%d' % (device_index,))
+        if self.device_type == 'gpu':
+            cuda = torch.device('cuda:%d' % (self.device_index,))
             i_s = i_s.to(device=cuda)
             i_t = i_t.to(device=cuda)
 
         return i_s, i_t
 
 
-    def learn_OT_dual_variables(self, epochs=10, batch_size=100, optimizer=None, lr=0.01, device_type='cpu', device_index=0):
-
-        if device_type == 'gpu':
-            self.moveDataToGPU(device_index=device_index)
+    def learn_OT_dual_variables(self, epochs=10, batch_size=100, optimizer=None, lr=0.01):
 
         trainable_params = [self.u, self.v]
         if not optimizer:
@@ -84,7 +81,7 @@ class PyTorchStochasticDiscreteOT(PyTorchStochasticOT):
 
             for b in range(batch_number_per_epoch):
 
-                i_s, i_t = self.sampleFromIndependantCoupling(batch_size, device_type, device_index)
+                i_s, i_t = self.sampleFromIndependantCoupling(batch_size)
 
                 optimizer.zero_grad()
                 loss_batch = self.dual_OT_model(i_s, i_t)
@@ -104,12 +101,12 @@ class PyTorchStochasticDiscreteOT(PyTorchStochasticOT):
         return history
 
 
-    def compute_OT_MonteCarlo(self, epochs=10, batch_size=100, device_type='cpu', device_index=0): # before calling this, find the optimum dual variables with learn_OT_dual_variables
+    def compute_OT_MonteCarlo(self, epochs=10, batch_size=100): # before calling this, find the optimum dual variables with learn_OT_dual_variables
         batch_number_per_epoch = max([int((self.nt*self.nt)/float(batch_size*batch_size)), 1])
         OT_value = 0.
         for e in range(epochs):
             for b in range(batch_number_per_epoch):
-                i_s, i_t = self.sampleFromIndependantCoupling(batch_size, device_type, device_index)
+                i_s, i_t = self.sampleFromIndependantCoupling(batch_size)
                 OT_value += self.dual_OT_model(i_s, i_t).item()
         return -OT_value/epochs/(self.nt*self.nt)
 
@@ -129,7 +126,7 @@ class PyTorchStochasticDiscreteOT(PyTorchStochasticOT):
         return self.barycentric_model_batch_loss(u_batch, v_batch, Xs_batch, Xt_batch, fXs_batch)
 
 
-    def learn_barycentric_mapping(self, neuralNet=None, epochs=10, batch_size=100, optimizer=None, lr=0.01, device_type='cpu', device_index=0):
+    def learn_barycentric_mapping(self, neuralNet=None, epochs=10, batch_size=100, optimizer=None, lr=0.01):
 
         if not neuralNet:
             neuralNet = Net(input_d=self.d, output_d=self.d)

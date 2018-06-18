@@ -9,9 +9,9 @@ from StochasticOT import PyTorchStochasticOT
 class PyTorchStochasticSemiDiscreteOT(PyTorchStochasticOT):
 
 
-    def __init__(self, xt=None, wt=None, source_dual_variable_NN=None, reg_type='entropy', reg_val=0.1):
+    def __init__(self, xt=None, wt=None, source_dual_variable_NN=None, reg_type='entropy', reg_val=0.1, device_type='cpu', device_index=0):
 
-        PyTorchStochasticOT.__init__(self, reg_type=reg_type, reg_val=reg_val)
+        PyTorchStochasticOT.__init__(self, reg_type=reg_type, reg_val=reg_val, device_type=device_type, device_index=device_index)
 
         self.Xt = torch.from_numpy(xt)
         self.wt = torch.from_numpy(wt)
@@ -54,7 +54,7 @@ class PyTorchStochasticSemiDiscreteOT(PyTorchStochasticOT):
         return Xs_batch
 
 
-    def learn_OT_dual_variables(self, epochs=10, batch_size=100, source_sampling_function=None, optimizer=None, lr=0.01, device_type='cpu', device_index=0):
+    def learn_OT_dual_variables(self, epochs=10, batch_size=100, source_sampling_function=None, optimizer=None, lr=0.01):
 
         if not source_sampling_function:
             source_sampling_function = self.sampleFromFittedGaussian
@@ -98,7 +98,7 @@ class PyTorchStochasticSemiDiscreteOT(PyTorchStochasticOT):
         return history
 
 
-    def compute_OT_MonteCarlo(self, epochs=10, batch_size=100, source_sampling_function=None, device_type='cpu', device_index=0): # before calling this, find the optimum dual variables with learn_OT_dual_variables
+    def compute_OT_MonteCarlo(self, epochs=10, batch_size=100, source_sampling_function=None): # before calling this, find the optimum dual variables with learn_OT_dual_variables
         if source_sampling_function == None:
             source_sampling_function = self.sampleFromFittedGaussian
         batch_number_per_epoch = max([int((self.nt*self.nt)/float(batch_size*batch_size)), 1])
@@ -125,7 +125,7 @@ class PyTorchStochasticSemiDiscreteOT(PyTorchStochasticOT):
         return self.barycentric_model_batch_loss(u_batch, v_batch, Xs_batch, Xt_batch, fXs_batch)
 
 
-    def learn_barycentric_mapping(self, neuralNet=None, epochs=10, batch_size=100, source_sampling_function=None, optimizer=None, lr=0.01, device_type='cpu', device_index=0):
+    def learn_barycentric_mapping(self, neuralNet=None, epochs=10, batch_size=100, source_sampling_function=None, optimizer=None, lr=0.01):
 
         if not source_sampling_function:
             source_sampling_function = self.sampleFromFittedGaussian
@@ -180,15 +180,19 @@ class Net(nn.Module):
         super(Net, self).__init__()
         self.fc1 = nn.Linear(input_d, 128)
         self.fc2 = nn.Linear(128, 256)
-        self.fc3 = nn.Linear(256, 128)
-        self.fc4 = nn.Linear(128, output_d)
+        self.fc3 = nn.Linear(256, 256)
+        self.fc4 = nn.Linear(256, 256)
+        self.fc5 = nn.Linear(256, 128)
+        self.fc6 = nn.Linear(128, output_d)
 
     def forward(self, x):
         x = x.type(torch.FloatTensor)
         x = func.relu(self.fc1(x))
         x = func.relu(self.fc2(x))
         x = func.relu(self.fc3(x))
-        x = self.fc4(x).type(torch.DoubleTensor)
+        x = func.relu(self.fc4(x))
+        x = func.relu(self.fc5(x))
+        x = self.fc6(x).type(torch.DoubleTensor)
         return x
 
 

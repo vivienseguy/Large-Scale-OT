@@ -8,11 +8,13 @@ import torch.nn.functional as func
 class PyTorchStochasticOT:
 
 
-    def __init__(self, reg_type='entropy', reg_val=0.1):
+    def __init__(self, reg_type='entropy', reg_val=0.1, device_type='cpu', device_index=0):
 
         self.reg_type = reg_type
         self.reg_val = reg_val
         self.d_type = torch.float64
+        self.device_type = device_type
+        self.device_index = device_index
 
         self.barycentric_mapping = None
 
