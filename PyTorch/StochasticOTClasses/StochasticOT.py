@@ -18,6 +18,11 @@ class PyTorchStochasticOT:
 
         self.barycentric_mapping = None
 
+        if device_type == 'gpu' and torch.cuda.is_available():
+            self.device = torch.device('cuda:%d' % (self.device_index,))
+        else:
+            self.device = torch.device('cpu')
+
 
     def computeSquareEuclideanCostMatrix(self, Xs_batch, Xt_batch):
         return torch.reshape(torch.sum(torch.mul(Xs_batch, Xs_batch), dim=1), (-1, 1)) + torch.reshape(torch.sum(torch.mul(Xt_batch, Xt_batch), dim=1), (1, -1)) \

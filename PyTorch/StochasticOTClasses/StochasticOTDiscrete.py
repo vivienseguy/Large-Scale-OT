@@ -17,22 +17,13 @@ class PyTorchStochasticDiscreteOT(PyTorchStochasticOT):
         self.nt = xt.shape[0]
         self.d = xt.shape[1]
 
-        self.Xs = torch.from_numpy(xs)
-        self.ws = torch.from_numpy(ws)
-        self.Xt = torch.from_numpy(xt)
-        self.wt = torch.from_numpy(wt)
+        self.Xs = torch.from_numpy(xs).to(device=self.device)
+        self.ws = torch.from_numpy(ws).to(device=self.device)
+        self.Xt = torch.from_numpy(xt).to(device=self.device)
+        self.wt = torch.from_numpy(wt).to(device=self.device)
 
-        self.u = torch.zeros(self.ns, dtype=self.d_type, requires_grad=True) # first dual variable
-        self.v = torch.zeros(self.nt, dtype=self.d_type, requires_grad=True) # second dual variable
-
-        if device_type == 'gpu' and torch.cuda.is_available():
-            self.device = torch.device('cuda:%d' % (self.device_index,))
-            self.Xs = self.Xs.to(device=self.device)
-            self.Xt = self.Xt.to(device=self.device)
-            self.u = self.u.to(device=self.device)
-            self.v = self.v.to(device=self.device)
-        else:
-            self.device = torch.device('cpu')
+        self.u = torch.zeros(self.ns, dtype=self.d_type, requires_grad=True).to(device=self.device) # first dual variable
+        self.v = torch.zeros(self.nt, dtype=self.d_type, requires_grad=True).to(device=self.device) # second dual variable
 
 
     def dual_OT_model(self, i_s, i_t):
