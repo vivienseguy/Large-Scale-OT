@@ -13,19 +13,26 @@ class PyTorchStochasticDiscreteOT(PyTorchStochasticOT):
 
         PyTorchStochasticOT.__init__(self, reg_type=reg_type, reg_val=reg_val, device_type=device_type, device_index=device_index)
 
+        self.ns = xs.shape[0]
+        self.nt = xt.shape[0]
+        self.d = xt.shape[1]
+
         self.Xs = torch.from_numpy(xs)
         self.ws = torch.from_numpy(ws)
-
         self.Xt = torch.from_numpy(xt)
         self.wt = torch.from_numpy(wt)
 
-        self.ns = xs.shape[0]
-        self.nt = xt.shape[0]
-
-        self.d = xt.shape[1]
-
         self.u = torch.zeros(self.ns, dtype=self.d_type, requires_grad=True) # first dual variable
         self.v = torch.zeros(self.nt, dtype=self.d_type, requires_grad=True) # second dual variable
+
+        if device_type == 'gpu' and torch.cuda.is_available():
+            self.device = torch.device('cuda:%d' % (self.device_index,))
+            self.Xs = self.Xs.to(device=self.device)
+            self.Xt = self.Xt.to(device=self.device)
+            self.u = self.u.to(device=self.device)
+            self.v = self.v.to(device=self.device)
+        else:
+            self.device = torch.device('cpu')
 
 
     def dual_OT_model(self, i_s, i_t):
@@ -39,24 +46,10 @@ class PyTorchStochasticDiscreteOT(PyTorchStochasticOT):
         return self.dual_OT_batch_loss(batch_size=batch_size, u_batch=u_batch, v_batch=v_batch, Xs_batch=Xs_batch, Xt_batch=Xt_batch)
 
 
-    def moveDataToGPU(self):
-
-        cuda = torch.device('cuda:%d' % (self.device_index,))
-        self.Xs = self.Xs.to(device=cuda)
-        self.Xt = self.Xt.to(device=cuda)
-        self.u = self.u.to(device=cuda)
-        self.v = self.v.to(device=cuda)
-
-
     def sampleFromIndependantCoupling(self, batch_size):
 
-        i_s = torch.from_numpy(np.random.choice(self.ns, size=(batch_size,), replace=False, p=self.ws)).type(torch.LongTensor)
-        i_t = torch.from_numpy(np.random.choice(self.nt, size=(batch_size,), replace=False, p=self.wt)).type(torch.LongTensor)
-
-        if self.device_type == 'gpu':
-            cuda = torch.device('cuda:%d' % (self.device_index,))
-            i_s = i_s.to(device=cuda)
-            i_t = i_t.to(device=cuda)
+        i_s = torch.from_numpy(np.random.choice(self.ns, size=(batch_size,), replace=False, p=self.ws)).type(torch.LongTensor).to(device=self.device)
+        i_t = torch.from_numpy(np.random.choice(self.nt, size=(batch_size,), replace=False, p=self.wt)).type(torch.LongTensor).to(device=self.device)
 
         return i_s, i_t
 
@@ -129,7 +122,7 @@ class PyTorchStochasticDiscreteOT(PyTorchStochasticOT):
     def learn_barycentric_mapping(self, neuralNet=None, epochs=10, batch_size=100, optimizer=None, lr=0.01):
 
         if not neuralNet:
-            neuralNet = Net(input_d=self.d, output_d=self.d)
+            neuralNet = Net(input_d=self.d, output_d=self.d).to(device=self.device)
 
         self.barycentric_mapping = neuralNet
 
