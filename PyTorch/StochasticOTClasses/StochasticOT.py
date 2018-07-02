@@ -26,7 +26,7 @@ class PyTorchStochasticOT:
 
     def computeSquareEuclideanCostMatrix(self, Xs_batch, Xt_batch):
         return torch.reshape(torch.sum(torch.mul(Xs_batch, Xs_batch), dim=1), (-1, 1)) + torch.reshape(torch.sum(torch.mul(Xt_batch, Xt_batch), dim=1), (1, -1)) \
-               - 2. * torch.matmul(Xs_batch,torch.transpose(Xt_batch, 0,1))
+               - 2. * torch.matmul(Xs_batch, torch.transpose(Xt_batch, 0,1))
 
 
     def dual_OT_batch_loss(self, batch_size, u_batch, v_batch, Xs_batch, Xt_batch):

@@ -167,11 +167,11 @@ class Net(nn.Module):
         self.device=device
 
     def forward(self, x):
-        x = x.type(torch.FloatTensor).to(device=self.device)
+        x = x.float()
         x = func.relu(self.fc1(x))
         x = func.relu(self.fc2(x))
         x = func.relu(self.fc3(x))
-        x = self.fc4(x).type(torch.DoubleTensor)
+        x = self.fc4(x).double()
         return x
 
 
