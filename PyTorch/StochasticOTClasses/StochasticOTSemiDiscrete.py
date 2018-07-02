@@ -186,13 +186,13 @@ class Net(nn.Module):
         self.fc6 = nn.Linear(128, output_d)
 
     def forward(self, x):
-        x = x.type(torch.FloatTensor)
+        x = x.float()
         x = func.relu(self.fc1(x))
         x = func.relu(self.fc2(x))
         x = func.relu(self.fc3(x))
         x = func.relu(self.fc4(x))
         x = func.relu(self.fc5(x))
-        x = self.fc6(x).type(torch.DoubleTensor)
+        x = self.fc6(x).double()
         return x
 
 
