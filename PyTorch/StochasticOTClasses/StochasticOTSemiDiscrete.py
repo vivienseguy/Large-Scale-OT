@@ -13,17 +13,17 @@ class PyTorchStochasticSemiDiscreteOT(PyTorchStochasticOT):
 
         PyTorchStochasticOT.__init__(self, reg_type=reg_type, reg_val=reg_val, device_type=device_type, device_index=device_index)
 
-        self.Xt = torch.from_numpy(xt)
-        self.wt = torch.from_numpy(wt)
+        self.Xt = torch.from_numpy(xt).to(device=self.device)
+        self.wt = torch.from_numpy(wt).to(device=self.device)
 
         self.nt = xt.shape[0]
         self.d = xt.shape[1]
 
         if not source_dual_variable_NN:
-            source_dual_variable_NN = Net(input_d=self.d, output_d=1)
+            source_dual_variable_NN = Net(input_d=self.d, output_d=1).to(device=self.device)
 
         self.u = source_dual_variable_NN # first dual variable
-        self.v = torch.zeros(self.nt, dtype=self.d_type, requires_grad=True) # second dual variable
+        self.v = torch.zeros(self.nt, dtype=self.d_type, requires_grad=True, device=self.device) # second dual variable
 
         # In case we want to learn OT between the data and a Gaussian which is fitted to the data by Maximum Likelihood
         self.xt_mean = np.mean(xt, axis=0)
@@ -77,8 +77,8 @@ class PyTorchStochasticSemiDiscreteOT(PyTorchStochasticOT):
 
             for b in range(batch_number_per_epoch):
 
-                Xs_batch = source_sampling_function(batch_size=batch_size)
-                i_t = torch.from_numpy(np.random.choice(self.nt, size=(batch_size,), replace=False, p=self.wt)).type(torch.LongTensor)
+                Xs_batch = source_sampling_function(batch_size=batch_size).to(device=self.device)
+                i_t = torch.from_numpy(np.random.choice(self.nt, size=(batch_size,), replace=False, p=self.wt)).type(torch.LongTensor).to(device=self.device)
 
                 optimizer.zero_grad()
                 loss_batch = self.dual_OT_model(Xs_batch, i_t)
@@ -105,8 +105,8 @@ class PyTorchStochasticSemiDiscreteOT(PyTorchStochasticOT):
         OT_value = 0.
         for e in range(epochs):
             for b in range(batch_number_per_epoch):
-                Xs_batch = source_sampling_function(batch_size=batch_size)
-                i_t = torch.from_numpy(np.random.choice(self.nt, size=(batch_size,), replace=False, p=self.wt)).type(torch.LongTensor)
+                Xs_batch = source_sampling_function(batch_size=batch_size).to(device=self.device)
+                i_t = torch.from_numpy(np.random.choice(self.nt, size=(batch_size,), replace=False, p=self.wt)).type(torch.LongTensor).to(device=self.device)
                 OT_value += self.dual_OT_model(Xs_batch, i_t).item()
         return -OT_value/epochs/(self.nt*self.nt)
 
@@ -133,7 +133,7 @@ class PyTorchStochasticSemiDiscreteOT(PyTorchStochasticOT):
         if not neuralNet:
             neuralNet = Net(self.d, self.d)
 
-        self.barycentric_mapping = neuralNet
+        self.barycentric_mapping = neuralNet.to(device=self.device)
 
         if not optimizer:
             optimizer = torch.optim.SGD(neuralNet.parameters(), lr=lr)

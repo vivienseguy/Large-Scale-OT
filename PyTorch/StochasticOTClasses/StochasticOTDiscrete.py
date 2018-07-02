@@ -113,9 +113,9 @@ class PyTorchStochasticDiscreteOT(PyTorchStochasticOT):
     def learn_barycentric_mapping(self, neuralNet=None, epochs=10, batch_size=100, optimizer=None, lr=0.01):
 
         if not neuralNet:
-            neuralNet = Net(input_d=self.d, output_d=self.d).to(device=self.device)
+            neuralNet = Net(input_d=self.d, output_d=self.d)
 
-        self.barycentric_mapping = neuralNet
+        self.barycentric_mapping = neuralNet.to(device=self.device)
 
         if not optimizer:
             optimizer = torch.optim.SGD(neuralNet.parameters(), lr=lr)
@@ -134,8 +134,8 @@ class PyTorchStochasticDiscreteOT(PyTorchStochasticOT):
 
             for b in range(batch_number_per_epoch):
 
-                i_s = torch.from_numpy(np.random.choice(self.ns, size=(batch_size,), replace=False, p=self.ws)).type(torch.LongTensor)
-                i_t = torch.from_numpy(np.random.choice(self.nt, size=(batch_size,), replace=False, p=self.wt)).type(torch.LongTensor)
+                i_s = torch.from_numpy(np.random.choice(self.ns, size=(batch_size,), replace=False, p=self.ws)).type(torch.LongTensor).to(device=self.device)
+                i_t = torch.from_numpy(np.random.choice(self.nt, size=(batch_size,), replace=False, p=self.wt)).type(torch.LongTensor).to(device=self.device)
 
                 optimizer.zero_grad()
 
