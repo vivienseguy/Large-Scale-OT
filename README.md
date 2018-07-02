@@ -27,7 +27,7 @@ Start by creating the regularized-OT computation class: either PyTorchStochastic
 import numpy as np
 from PyTorch.StochasticOTClasses.StochasticOTDiscrete import PyTorchStochasticDiscreteOT
 
-discreteOTComputer = PyTorchStochasticDiscreteOT(xs, ws, xt, wt, reg_type, reg_val, device_type=device_type, device_index=device_index)
+discreteOTComputer = PyTorchStochasticDiscreteOT(xs, ws, xt, wt, reg_type='l2', reg_val=0.02, device_type='cpu')
 ```
 Compute the optimal dual variables through Alg. 1.:
 ``` python
