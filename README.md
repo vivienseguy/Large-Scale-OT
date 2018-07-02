@@ -7,6 +7,17 @@ Implementation in PyTorch of stochastic algorithms for the computation of Regula
  - A stochastic algorithm (Alg. 2) for learning an Optimal Map, parameterized as a Deep Neural Network between the source and target probability measures
  
  Both entropy and L2 regularizations are considered and implemented.
+
+
+### Requirements
+```
+python3
+pytorch
+matplotlib
+...
+
+### Usage
+
  
 ## References
 
