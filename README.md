@@ -21,8 +21,10 @@ Start by creating the regularized-OT computation class: either PyTorchStochastic
 ``` python
 discreteOTComputer = PyTorchStochasticDiscreteOT(xs, ws, xt, wt, reg_type, reg_val, device_type=device_type, device_index=device_index)
 ```
-Compute the optimal dual variable through Alg. 1.:
+Compute the optimal dual variables through Alg. 1.:
 ``` python
+import numpy as np
+from PyTorch.StochasticOTClasses.StochasticOTDiscrete import PyTorchStochasticDiscreteOT
 history = discreteOTComputer.learn_OT_dual_variables(epochs=1000, batch_size=50, lr=0.0005)
 ```
 Once the optimal dual variables have been obtained, you can compute the OT loss stochastically:
@@ -36,6 +38,15 @@ bp_history = discreteOTComputer.learn_barycentric_mapping(epochs=300, batch_size
 Once learned, you can apply the (approximate) optimal mapping to some sample via:
 ``` python
 xsf = discreteOTComputer.evaluate_barycentric_mapping(xs)
+``` 
+You can visualize the source, target and mapped samples:
+``` python
+import matplotlib.pylab as pl
+pl.figure()
+pl.plot(xs[:, 0], xs[:, 1], '+b', label='source samples')
+pl.plot(xt[:, 0], xt[:, 1], 'xr', label='target samples')
+pl.plot(xsf[:, 0], xsf[:, 1], '+g', label='mapped source samples')
+pl.legend()
 ``` 
  
 ## References

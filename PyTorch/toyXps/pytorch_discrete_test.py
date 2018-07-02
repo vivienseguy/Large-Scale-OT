@@ -55,7 +55,9 @@ pl.savefig('barycentric_map_learning_loss.png')
 xsf = discreteOTComputer.evaluate_barycentric_mapping(xs)
 
 pl.figure(3)
-pl.plot(xs[:, 0], xs[:, 1], '+b')
-pl.plot(xt[:, 0], xt[:, 1], 'xr')
-pl.plot(xsf[:, 0], xsf[:, 1], '+g')
+pl.plot(xs[:, 0], xs[:, 1], '+b', label='source samples')
+pl.plot(xt[:, 0], xt[:, 1], 'xr', label='target samples')
+pl.plot(xsf[:, 0], xsf[:, 1], '+g', label='mapped source samples')
+pl.legend()
+
 pl.savefig('mapping_estimation.png')
