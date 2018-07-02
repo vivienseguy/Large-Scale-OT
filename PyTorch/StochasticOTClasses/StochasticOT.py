@@ -61,7 +61,7 @@ class PyTorchStochasticOT:
     def evaluate_barycentric_mapping(self, xs):
         self.barycentric_mapping.eval()
         xs_tensor = torch.from_numpy(xs).to(device=self.device)
-        return self.barycentric_mapping(xs_tensor).detach().numpy()
+        return self.barycentric_mapping(xs_tensor).detach().cpu().numpy()
 
 
 
