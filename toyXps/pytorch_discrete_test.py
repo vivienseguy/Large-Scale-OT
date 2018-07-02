@@ -1,8 +1,7 @@
 import numpy as np
 import matplotlib.pylab as pl
 import sys
-from PyTorch.StochasticOTClasses.StochasticOTDiscrete import PyTorchStochasticDiscreteOT
-
+from StochasticOTClasses.StochasticOTDiscrete import PyTorchStochasticDiscreteOT
 
 
 # Initialize data

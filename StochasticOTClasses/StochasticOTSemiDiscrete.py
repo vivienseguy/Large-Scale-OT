@@ -23,7 +23,7 @@ class PyTorchStochasticSemiDiscreteOT(PyTorchStochasticOT):
             source_dual_variable_NN = Net(input_d=self.d, output_d=1).to(device=self.device)
 
         self.u = source_dual_variable_NN # first dual variable
-        self.v = torch.zeros(self.nt, dtype=self.d_type, requires_grad=True, device=self.device) # second dual variable
+        self.v = torch.zeros(self.nt, dtype=self.dtype, requires_grad=True, device=self.device) # second dual variable
 
         # In case we want to learn OT between the data and a Gaussian which is fitted to the data by Maximum Likelihood
         self.xt_mean = np.mean(xt, axis=0)

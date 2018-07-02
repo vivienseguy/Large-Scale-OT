@@ -2,7 +2,7 @@
 import numpy as np
 import matplotlib.pylab as pl
 import torch
-from PyTorch.StochasticOTClasses.StochasticOTSemiDiscrete import PyTorchStochasticSemiDiscreteOT
+from StochasticOTClasses.StochasticOTSemiDiscrete import PyTorchStochasticSemiDiscreteOT
 
 
 reg_type = 'l2'

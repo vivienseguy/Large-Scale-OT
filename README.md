@@ -24,8 +24,7 @@ git clone https://github.com/vivienseguy/Large-Scale-OT.git
 ### Usage
 Start by creating the regularized-OT computation class: either PyTorchStochasticDiscreteOT or PyTorchStochasticSemiDiscreteOT depending on your setting. 
 ``` python
-import numpy as np
-from PyTorch.StochasticOTClasses.StochasticOTDiscrete import PyTorchStochasticDiscreteOT
+from StochasticOTClasses.StochasticOTDiscrete import PyTorchStochasticDiscreteOT
 
 discreteOTComputer = PyTorchStochasticDiscreteOT(xs, ws, xt, wt, reg_type='l2', reg_val=0.02, device_type='cpu')
 ```
@@ -55,7 +54,7 @@ pl.plot(xt[:, 0], xt[:, 1], 'xr', label='target samples')
 pl.plot(xsf[:, 0], xsf[:, 1], '+g', label='mapped source samples')
 pl.legend()
 ``` 
-![](https://github.com/vivienseguy/Large-Scale-OT/blob/master/PyTorch/toyXps/mapping_estimation.png)
+![](https://github.com/vivienseguy/Large-Scale-OT/blob/master/toyXps/mapping_estimation.png)
 
  
 ## References
