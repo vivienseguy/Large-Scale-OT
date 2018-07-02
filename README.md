@@ -11,13 +11,32 @@ Implementation in PyTorch of stochastic algorithms for the computation of Regula
 
 ### Requirements
 ```
-python3
+python2 or python3
 pytorch
 matplotlib
-...
+```
 
 ### Usage
-
+Start by creating the regularized-OT computation class: either PyTorchStochasticDiscreteOT or PyTorchStochasticSemiDiscreteOT depending on your setting. 
+``` python
+discreteOTComputer = PyTorchStochasticDiscreteOT(xs, ws, xt, wt, reg_type, reg_val, device_type=device_type, device_index=device_index)
+```
+Compute the optimal dual variable through Alg. 1.:
+``` python
+history = discreteOTComputer.learn_OT_dual_variables(epochs=1000, batch_size=50, lr=0.0005)
+```
+Once the optimal dual variables have been obtained, you can compute the OT loss stochastically:
+``` python
+d_stochastic = discreteOTComputer.compute_OT_MonteCarlo(epochs=20, batch_size=50)
+``` 
+You can also learn an approximate optimal map between the two probability measures by learning the barycentric mapping (ALg. 2.). The mapping is parameterized as a deep neural network that you can supply in the functions parameters. Otherwise a default small 3-layers NN is used.
+``` python
+bp_history = discreteOTComputer.learn_barycentric_mapping(epochs=300, batch_size=50, lr=0.000002)
+``` 
+Once learned, you can apply the (approximate) optimal mapping to some sample via:
+``` python
+xsf = discreteOTComputer.evaluate_barycentric_mapping(xs)
+``` 
  
 ## References
 

@@ -31,15 +31,16 @@ wt = np.ones((nt,))/nt
 discreteOTComputer = PyTorchStochasticDiscreteOT(xs, ws, xt, wt, reg_type, reg_val, device_type=device_type, device_index=device_index)
 history = discreteOTComputer.learn_OT_dual_variables(epochs=1000, batch_size=50, lr=0.0005)
 
-# Compute the reg-OT objective
-d_stochastic = discreteOTComputer.compute_OT_MonteCarlo(epochs=20, batch_size=50)
-print('dual objective: %f\n' % d_stochastic)
-
 pl.figure(1)
 pl.plot(history['losses'], lw=3, label='loss')
 pl.legend(loc='best')
 pl.title('Loss per epoch')
 pl.savefig('loss_per_epoch.png')
+
+
+# Compute the reg-OT objective
+d_stochastic = discreteOTComputer.compute_OT_MonteCarlo(epochs=20, batch_size=50)
+print('dual objective: %f\n' % d_stochastic)
 
 
 # Learn Barycentric Mapping (alg.2 of ICLR 2018 paper "Large-Scale Optimal Transport and Mapping Estimation")
