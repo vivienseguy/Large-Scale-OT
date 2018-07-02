@@ -48,6 +48,8 @@ pl.plot(xt[:, 0], xt[:, 1], 'xr', label='target samples')
 pl.plot(xsf[:, 0], xsf[:, 1], '+g', label='mapped source samples')
 pl.legend()
 ``` 
+![](https://github.com/vivienseguy/Large-Scale-OT/blob/master/PyTorch/toyXps/mapping_estimation.png)
+
  
 ## References
 
