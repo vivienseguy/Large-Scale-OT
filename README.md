@@ -16,15 +16,21 @@ pytorch
 matplotlib
 ```
 
+### Install 
+```
+git clone https://github.com/vivienseguy/Large-Scale-OT.git
+```
+
 ### Usage
 Start by creating the regularized-OT computation class: either PyTorchStochasticDiscreteOT or PyTorchStochasticSemiDiscreteOT depending on your setting. 
 ``` python
+import numpy as np
+from PyTorch.StochasticOTClasses.StochasticOTDiscrete import PyTorchStochasticDiscreteOT
+
 discreteOTComputer = PyTorchStochasticDiscreteOT(xs, ws, xt, wt, reg_type, reg_val, device_type=device_type, device_index=device_index)
 ```
 Compute the optimal dual variables through Alg. 1.:
 ``` python
-import numpy as np
-from PyTorch.StochasticOTClasses.StochasticOTDiscrete import PyTorchStochasticDiscreteOT
 history = discreteOTComputer.learn_OT_dual_variables(epochs=1000, batch_size=50, lr=0.0005)
 ```
 Once the optimal dual variables have been obtained, you can compute the OT loss stochastically:
@@ -42,6 +48,7 @@ xsf = discreteOTComputer.evaluate_barycentric_mapping(xs)
 You can visualize the source, target and mapped samples:
 ``` python
 import matplotlib.pylab as pl
+
 pl.figure()
 pl.plot(xs[:, 0], xs[:, 1], '+b', label='source samples')
 pl.plot(xt[:, 0], xt[:, 1], 'xr', label='target samples')
