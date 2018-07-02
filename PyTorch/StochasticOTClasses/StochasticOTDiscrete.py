@@ -113,7 +113,7 @@ class PyTorchStochasticDiscreteOT(PyTorchStochasticOT):
     def learn_barycentric_mapping(self, neuralNet=None, epochs=10, batch_size=100, optimizer=None, lr=0.01):
 
         if not neuralNet:
-            neuralNet = Net(input_d=self.d, output_d=self.d)
+            neuralNet = Net(input_d=self.d, output_d=self.d, device=self.device)
 
         self.barycentric_mapping = neuralNet.to(device=self.device)
 
@@ -158,15 +158,16 @@ class PyTorchStochasticDiscreteOT(PyTorchStochasticOT):
 
 
 class Net(nn.Module):
-    def __init__(self, input_d=2, output_d=2):
+    def __init__(self, input_d=2, output_d=2, device=None):
         super(Net, self).__init__()
         self.fc1 = nn.Linear(input_d, 128)
         self.fc2 = nn.Linear(128, 256)
         self.fc3 = nn.Linear(256, 128)
         self.fc4 = nn.Linear(128, output_d)
+        self.device=device
 
     def forward(self, x):
-        x = x.type(torch.FloatTensor)
+        x = x.type(torch.FloatTensor).to(device=self.device)
         x = func.relu(self.fc1(x))
         x = func.relu(self.fc2(x))
         x = func.relu(self.fc3(x))

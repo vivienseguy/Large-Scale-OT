@@ -31,7 +31,7 @@ wt = np.ones((nt,))/nt
 
 # Dual OT Stochastic Optimization (alg.1 of ICLR 2018 paper "Large-Scale Optimal Transport and Mapping Estimation")
 discreteOTComputer = PyTorchStochasticDiscreteOT(xs, ws, xt, wt, reg_type, reg_val, device_type=device_type, device_index=device_index)
-history = discreteOTComputer.learn_OT_dual_variables(epochs=1000, batch_size=50, lr=0.0005)
+history = discreteOTComputer.learn_OT_dual_variables(epochs=200, batch_size=50, lr=0.0005)
 
 pl.figure(1)
 pl.plot(history['losses'], lw=3, label='loss')
