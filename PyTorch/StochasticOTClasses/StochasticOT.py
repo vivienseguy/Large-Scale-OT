@@ -12,7 +12,7 @@ class PyTorchStochasticOT:
 
         self.reg_type = reg_type
         self.reg_val = reg_val
-        self.d_type = torch.float64
+        self.dtype = torch.float64
         self.device_type = device_type
         self.device_index = device_index
 
@@ -37,7 +37,7 @@ class PyTorchStochasticOT:
             loss_batch = torch.sum(u_batch)*batch_size + torch.sum(v_batch)*batch_size \
                          - self.reg_val*torch.sum(torch.exp((torch.reshape(u_batch, (-1, 1)) + torch.reshape(v_batch, (1, -1)) - C_batch) / self.reg_val))
         elif self.reg_type == 'l2':
-            tmp = torch.max(torch.zeros(1).type(torch.DoubleTensor), (torch.reshape(u_batch, (-1, 1)) + torch.reshape(v_batch, (1, -1)) - C_batch))
+            tmp = torch.max(torch.zeros(1, dtype=self.dtype, device=self.device), (torch.reshape(u_batch, (-1, 1)) + torch.reshape(v_batch, (1, -1)) - C_batch))
             loss_batch = torch.sum(u_batch)*batch_size + torch.sum(v_batch)*batch_size \
                          - (1./(4.*self.reg_val))*torch.sum(torch.mul(tmp, tmp))
 
@@ -51,7 +51,7 @@ class PyTorchStochasticOT:
         if self.reg_type == 'entropy':
             H = torch.exp((torch.reshape(u_batch, (-1, 1)) + torch.reshape(v_batch, (1, -1)) - C_batch) / self.reg_val)
         elif self.reg_type == 'l2':
-            H = (1./(2.*self.reg_val))*torch.max(torch.zeros(1).type(torch.DoubleTensor), (torch.reshape(u_batch, (-1, 1)) + torch.reshape(v_batch, (1, -1)) - C_batch))
+            H = (1./(2.*self.reg_val))*torch.max(torch.zeros(1, dtype=self.dtype, device=self.device), (torch.reshape(u_batch, (-1, 1)) + torch.reshape(v_batch, (1, -1)) - C_batch))
 
         d_batch = self.computeSquareEuclideanCostMatrix(fXs_batch, Xt_batch)
 

@@ -22,8 +22,8 @@ class PyTorchStochasticDiscreteOT(PyTorchStochasticOT):
         self.Xt = torch.from_numpy(xt).to(device=self.device)
         self.wt = torch.from_numpy(wt).to(device=self.device)
 
-        self.u = torch.zeros(self.ns, dtype=self.d_type, requires_grad=True, device=self.device) # first dual variable
-        self.v = torch.zeros(self.nt, dtype=self.d_type, requires_grad=True, device=self.device) # second dual variable
+        self.u = torch.zeros(self.ns, dtype=self.dtype, requires_grad=True, device=self.device) # first dual variable
+        self.v = torch.zeros(self.nt, dtype=self.dtype, requires_grad=True, device=self.device) # second dual variable
 
 
     def dual_OT_model(self, i_s, i_t):
